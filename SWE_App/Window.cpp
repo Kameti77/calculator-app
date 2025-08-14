@@ -35,6 +35,7 @@ Window::Window() : wxFrame(nullptr, wxID_ANY, "CALCULATOR", wxPoint(200, 200), w
 
 	}
 	int countId = 0;
+
 	// other buttons
 	for (int row = 0; row < 5; ++row) {
 		for (int col = 0; col < 4; ++col) {
@@ -86,14 +87,15 @@ Window::~Window() {
 
 void Window::OnButtonClicked(wxCommandEvent& evt) {
 	int btnId = evt.GetId();
-	currentInput += buttonKeys[btnId];
-	display->SetValue(currentInput);
 
 	if (buttonKeys[btnId] == "=") {
 		HandleEqual();
 	}
 	else if (buttonKeys[btnId] == "AC") {
 		currentInput = "";
+	}
+	else {
+		currentInput += buttonKeys[btnId] + " ";
 	}
 
 	display->SetValue(currentInput);
@@ -102,11 +104,12 @@ void Window::OnButtonClicked(wxCommandEvent& evt) {
 void Window::HandleEqual() {
 
 	wxString expression = display->GetValue();
-	wxStringTokenizer tokenizer(expression, " +-*/", wxTOKEN_DEFAULT);
-
+	wxStringTokenizer tokenizer(expression, " ", wxTOKEN_DEFAULT);
 
 	double result = 0.0;
 	wxString currentOperator = "+";
+	wxString trigToken = "";
+	double nextNumber = 0.0;
 
 	while (tokenizer.HasMoreTokens())
 	{
@@ -116,13 +119,23 @@ void Window::HandleEqual() {
 		if (token == "+" || token == "-" || token == "*" || token == "/") {
 			currentOperator = token;
 		}
+		else if (token == "sin" || token == "cos" || token == "tan") {
+			currentOperator = token;
+		}
 		else {
 			double number = wxAtof(token);
 			if (currentOperator == "+")      result += number;
 			else if (currentOperator == "-") result -= number;
 			else if (currentOperator == "*") result *= number;
 			else if (currentOperator == "/") result /= number;
+
+			else if (currentOperator == "sin")
+				result = sin(number);
+			else if (currentOperator == "cos") result = cos(number);
+			else if (currentOperator == "tan") result = tan(number);
 		}
 	}
-	currentInput = wxString::Format("%g", result);
+
+	
+	currentInput = wxString::Format(wxT("%f"), result);
 }

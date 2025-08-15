@@ -13,11 +13,11 @@ Window::Window() : wxFrame(nullptr, wxID_ANY, "CALCULATOR", wxPoint(200, 200), w
 
 
 	wxBoxSizer* mainSizer = new wxBoxSizer(wxHORIZONTAL);
-	mainSizer->Add(panel, 0, wxALIGN_CENTER_HORIZONTAL | wxALL, 1);
+	mainSizer->Add(panel, 0,  wxALL, 1);
 
 	display = new wxTextCtrl(panel, wxID_ANY, "0", wxPoint(15, 10), wxSize(390, 80), wxTE_RIGHT | wxTE_READONLY | wxBORDER_NONE);
 	display->SetBackgroundColour(wxColour(62, 77, 77));
-	display->SetFont(wxFont(22, wxFONTFAMILY_TELETYPE, wxFONTSTYLE_NORMAL, wxFONTWEIGHT_BOLD));
+	display->SetFont(wxFont(24, wxFONTFAMILY_TELETYPE, wxFONTSTYLE_NORMAL, wxFONTWEIGHT_BOLD));
 
 	// trignometry and delete buttons
 	for (int i = 0; i < 4; ++i) {
@@ -87,6 +87,8 @@ Window::~Window() {
 
 void Window::OnButtonClicked(wxCommandEvent& evt) {
 	int btnId = evt.GetId();
+	
+
 
 	if (buttonKeys[btnId] == "=") {
 		HandleEqual();
@@ -94,8 +96,34 @@ void Window::OnButtonClicked(wxCommandEvent& evt) {
 	else if (buttonKeys[btnId] == "AC") {
 		currentInput = "";
 	}
+	else if(buttonKeys[btnId] == "del" ){
+		if(!currentInput.IsEmpty()) currentInput.RemoveLast();
+	}
 	else {
-		currentInput += buttonKeys[btnId] + " ";
+		if (buttonKeys[btnId] == "+" || buttonKeys[btnId] == "-" || buttonKeys[btnId] == "*" || buttonKeys[btnId] == "/" || buttonKeys[btnId] == "%" ) {
+			if(IsLastOperator) currentInput.Remove(currentInput.Length() - 3);
+			currentInput += " " + buttonKeys[btnId] + " ";
+			IsLastOperator = true;
+		}
+		else if (buttonKeys[btnId] == "sin" || buttonKeys[btnId] == "cos" || buttonKeys[btnId] == "tan") {
+			if (IsLastOperator) currentInput.Remove(currentInput.Length() - 4);
+			currentInput += buttonKeys[btnId] + " ";
+			IsLastOperator = true;
+		}
+		else if (buttonKeys[btnId] == "+/-") {
+			currentInput += "-";
+			IsLastOperator = false;
+		}
+		else {
+			if (buttonKeys[btnId] == ".") {
+				if (IsLastOperator) currentInput.Remove(currentInput.Length() - 1);
+				IsLastOperator = true;
+			}
+			else {
+				IsLastOperator = false;
+			}
+			currentInput += buttonKeys[btnId];
+		}
 	}
 
 	display->SetValue(currentInput);
@@ -104,19 +132,19 @@ void Window::OnButtonClicked(wxCommandEvent& evt) {
 void Window::HandleEqual() {
 
 	wxString expression = display->GetValue();
-	wxStringTokenizer tokenizer(expression, " ", wxTOKEN_DEFAULT);
+	wxStringTokenizer tokenizer(expression, " ", wxTOKEN_DEFAULT); // 2 * 2
 
 	double result = 0.0;
 	wxString currentOperator = "+";
 	wxString trigToken = "";
 	double nextNumber = 0.0;
-
+	bool exception= false;
 	while (tokenizer.HasMoreTokens())
 	{
 		wxString token = tokenizer.GetNextToken().Trim();
 		if (token.IsEmpty())
 			continue;
-		if (token == "+" || token == "-" || token == "*" || token == "/") {
+		if (token == "+" || token == "-" || token == "*" || token == "/" || token == "%") {
 			currentOperator = token;
 		}
 		else if (token == "sin" || token == "cos" || token == "tan") {
@@ -127,15 +155,18 @@ void Window::HandleEqual() {
 			if (currentOperator == "+")      result += number;
 			else if (currentOperator == "-") result -= number;
 			else if (currentOperator == "*") result *= number;
-			else if (currentOperator == "/") result /= number;
-
-			else if (currentOperator == "sin")
-				result = sin(number);
+			else if (currentOperator == "/") {
+				if (number == 0) { exception = true; break; } 
+				result /= number; 
+			}
+			else if (currentOperator == "%") {
+				if (number == 0) { exception = true; break; }
+				result = fmod(result, number);
+			}
+			else if (currentOperator == "sin") result = sin(number);
 			else if (currentOperator == "cos") result = cos(number);
 			else if (currentOperator == "tan") result = tan(number);
 		}
 	}
-
-	
-	currentInput = wxString::Format(wxT("%f"), result);
+	exception ? currentInput = "undefined" :currentInput = wxString::Format(wxT("%g"), result);
 }

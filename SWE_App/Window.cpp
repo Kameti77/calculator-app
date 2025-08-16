@@ -3,7 +3,7 @@
 #include <cmath>
 
 wxBEGIN_EVENT_TABLE(Window, wxFrame)
- EVT_COMMAND_RANGE(ID_BTN_FIRST, ID_BTN_LAST, wxEVT_BUTTON, Window::OnButtonClicked)
+EVT_COMMAND_RANGE(ID_BTN_FIRST, ID_BTN_LAST, wxEVT_BUTTON, Window::OnButtonClicked)
 wxEND_EVENT_TABLE()
 
 Window::Window() : wxFrame(nullptr, wxID_ANY, "CALCULATOR", wxPoint(200, 200), wxSize(440, 560)) {
@@ -11,9 +11,8 @@ Window::Window() : wxFrame(nullptr, wxID_ANY, "CALCULATOR", wxPoint(200, 200), w
 	panel->SetBackgroundColour(wxColour(25, 25, 25));
 	wxFont btnFont(17, wxFONTFAMILY_TELETYPE, wxFONTSTYLE_NORMAL, wxFONTWEIGHT_BOLD, false, "Roboto Mono");
 
-
 	wxBoxSizer* mainSizer = new wxBoxSizer(wxHORIZONTAL);
-	mainSizer->Add(panel, 0,  wxALL, 1);
+	mainSizer->Add(panel, 0, wxALL, 1);
 
 	display = new wxTextCtrl(panel, wxID_ANY, "0", wxPoint(15, 10), wxSize(390, 80), wxTE_RIGHT | wxTE_READONLY | wxBORDER_NONE);
 	display->SetBackgroundColour(wxColour(62, 77, 77));
@@ -34,9 +33,10 @@ Window::Window() : wxFrame(nullptr, wxID_ANY, "CALCULATOR", wxPoint(200, 200), w
 		}
 
 	}
-	int countId = 0;
 
 	// other buttons
+
+	int countId = 0;
 	for (int row = 0; row < 5; ++row) {
 		for (int col = 0; col < 4; ++col) {
 			if (btns[row][col] == "") {
@@ -75,7 +75,7 @@ Window::Window() : wxFrame(nullptr, wxID_ANY, "CALCULATOR", wxPoint(200, 200), w
 			if (btns[row][col] == "") {
 				continue;
 			}
-			buttonKeys.insert({ 10010 + count, btns[row][col]});
+			buttonKeys.insert({ 10010 + count, btns[row][col] });
 			count++;
 		}
 	}
@@ -87,8 +87,6 @@ Window::~Window() {
 
 void Window::OnButtonClicked(wxCommandEvent& evt) {
 	int btnId = evt.GetId();
-	
-
 
 	if (buttonKeys[btnId] == "=") {
 		HandleEqual();
@@ -96,12 +94,12 @@ void Window::OnButtonClicked(wxCommandEvent& evt) {
 	else if (buttonKeys[btnId] == "AC") {
 		currentInput = "";
 	}
-	else if(buttonKeys[btnId] == "del" ){
-		if(!currentInput.IsEmpty()) currentInput.RemoveLast();
+	else if (buttonKeys[btnId] == "del") {
+		if (!currentInput.IsEmpty()) currentInput.RemoveLast();
 	}
 	else {
-		if (buttonKeys[btnId] == "+" || buttonKeys[btnId] == "-" || buttonKeys[btnId] == "*" || buttonKeys[btnId] == "/" || buttonKeys[btnId] == "%" ) {
-			if(IsLastOperator) currentInput.Remove(currentInput.Length() - 3);
+		if (buttonKeys[btnId] == "+" || buttonKeys[btnId] == "-" || buttonKeys[btnId] == "*" || buttonKeys[btnId] == "/" || buttonKeys[btnId] == "%") {
+			if (IsLastOperator) currentInput.Remove(currentInput.Length() - 3);
 			currentInput += " " + buttonKeys[btnId] + " ";
 			IsLastOperator = true;
 		}
@@ -125,20 +123,17 @@ void Window::OnButtonClicked(wxCommandEvent& evt) {
 			currentInput += buttonKeys[btnId];
 		}
 	}
-
 	display->SetValue(currentInput);
 }
 
 void Window::HandleEqual() {
 
 	wxString expression = display->GetValue();
-	wxStringTokenizer tokenizer(expression, " ", wxTOKEN_DEFAULT); // 2 * 2
+	wxStringTokenizer tokenizer(expression, " ", wxTOKEN_DEFAULT);
 
 	double result = 0.0;
 	wxString currentOperator = "+";
-	wxString trigToken = "";
-	double nextNumber = 0.0;
-	bool exception= false;
+	bool exception = false;
 	while (tokenizer.HasMoreTokens())
 	{
 		wxString token = tokenizer.GetNextToken().Trim();
@@ -156,17 +151,31 @@ void Window::HandleEqual() {
 			else if (currentOperator == "-") result -= number;
 			else if (currentOperator == "*") result *= number;
 			else if (currentOperator == "/") {
-				if (number == 0) { exception = true; break; } 
-				result /= number; 
+				if (number == 0) { exception = true; break; }
+				result /= number;
 			}
 			else if (currentOperator == "%") {
 				if (number == 0) { exception = true; break; }
 				result = fmod(result, number);
 			}
-			else if (currentOperator == "sin") result = sin(number);
-			else if (currentOperator == "cos") result = cos(number);
-			else if (currentOperator == "tan") result = tan(number);
+			else if (currentOperator == "sin")
+			{
+				result = sin(number * M_PI / 180.0);
+				if (fabs(result) < 1e-10)
+					result = 0;
+			}
+			else if (currentOperator == "cos")
+			{
+				result = cos(number * M_PI / 180.0);
+				if (fabs(result) < 1e-10)
+					result = 0;
+			}
+			else if (currentOperator == "tan") {
+				result = tan(number * M_PI / 180.0);
+				if (fabs(result) < 1e-10)
+					result = 0;
+			}
 		}
 	}
-	exception ? currentInput = "undefined" :currentInput = wxString::Format(wxT("%g"), result);
+	exception ? currentInput = "undefined" : currentInput = wxString::Format(wxT("%g"), result);
 }

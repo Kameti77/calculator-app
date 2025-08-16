@@ -12,8 +12,9 @@ private:
 		{ "7", "8", "9", "*" } ,
 		{"4", "5", "6", "+"},
 		{"1", "2", "3", "-"},
-		{"0", ".", " +/-", "="}
+		{"0", ".", "+/-", "="}
 	};
+	// map for button id and keys
 	std::map<int, wxString> buttonKeys;
 
 	// button positions
@@ -24,15 +25,13 @@ private:
 	wxTextCtrl* display = nullptr;
 
 	wxString currentInput = "";
-
-	// event handler
-	
+	bool IsLastOperator = false;
+	bool IsLastNumber = false;
 public:
 	Window();
 	~Window();
 
 	void OnButtonClicked(wxCommandEvent& evt);
-
 	void HandleEqual();
 
 	wxDECLARE_EVENT_TABLE();

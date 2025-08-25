@@ -5,6 +5,9 @@ wxPanel* ButtonFactory::m_panel = nullptr;
 wxTextCtrl* ButtonFactory::m_display = nullptr;
 wxString ButtonFactory::currentInput = "";
 bool ButtonFactory::IsLastOperator = false;
+bool ButtonFactory::IsLastTrig = false;
+bool ButtonFactory::IsLastDot = false;
+
 wxFont ButtonFactory::m_btnFont(17, wxFONTFAMILY_TELETYPE, wxFONTSTYLE_NORMAL, wxFONTWEIGHT_BOLD, false, "Roboto Mono");
 
 void ButtonFactory::Init(wxPanel* panel, wxFont font, wxTextCtrl* display) {
@@ -26,6 +29,7 @@ wxButton* ButtonFactory::CreateMinusButton(const wxPoint& pos) {
 	newBtn->SetBackgroundColour(wxColour(62, 62, 77));
 	newBtn->SetForegroundColour(wxColour(255, 255, 255));
 	newBtn->SetFont(m_btnFont);
+	ApplyEvent(newBtn);
 	return newBtn;
 }
 wxButton* ButtonFactory::CreateMultiplyButton(const wxPoint& pos) {
@@ -111,7 +115,7 @@ wxButton* ButtonFactory::CreateEqualButton(const wxPoint& pos) {
 	newBtn->SetBackgroundColour(wxColour(213, 75, 0));
 	newBtn->SetForegroundColour(wxColour(255, 255, 255));
 	newBtn->SetFont(m_btnFont);
-	ApplyEvent(newBtn);
+	// ApplyEvent(newBtn);
 	return newBtn;
 }
 
@@ -157,6 +161,7 @@ void ButtonFactory::OnButtonClicked(wxCommandEvent& evt) {
 	wxString label = clickedBtn->GetLabel();
 
 	if (label == "=") {
+		
 		HandleEqual();
 	}
 	else if (label == "AC") {
@@ -170,27 +175,31 @@ void ButtonFactory::OnButtonClicked(wxCommandEvent& evt) {
 			if (IsLastOperator) currentInput.Remove(currentInput.Length() - 3);
 			currentInput += " " + label + " ";
 			IsLastOperator = true;
+			IsLastTrig = IsLastDot = false;
 		}
 		else if (label == "sin" || label == "cos" || label == "tan") {
-			if (IsLastOperator) currentInput.Remove(currentInput.Length() - 4);
+			// if (IsLastTrig) currentInput.Remove(currentInput.Length() - 4);
 			currentInput += label + " ";
-			IsLastOperator = true;
+			IsLastTrig = true;
+			IsLastOperator = IsLastDot = false;
 		}
 		else if (label == "+/-") {
 			currentInput += "-";
-			IsLastOperator = false;
+			IsLastOperator = IsLastTrig = IsLastDot = false;
 		}
 		else {
 			if (label == ".") {
-				if (IsLastOperator) currentInput.Remove(currentInput.Length() - 1);
-				IsLastOperator = true;
+				if (IsLastDot) currentInput.Remove(currentInput.Length() - 1);
+				IsLastDot = true;
+				IsLastOperator = IsLastTrig = false;
 			}
 			else {
-				IsLastOperator = false;
+				IsLastOperator = IsLastTrig = IsLastDot = false;
 			}
 			currentInput += label;
 		}
 	}
+
 	m_display->SetValue(currentInput);
 }
 

@@ -2,39 +2,33 @@
 #include "wx/wx.h"
 #include "map"
 
+
 class Window: public wxFrame
 {
 private:
 	// arrays of button
-	wxString firstRowBtns[4] = { "sin", "cos", "tan", "del" };
-	wxString btns[5][4] = {
+	wxString btns[6][4] = {
+		{"sin", "cos", "tan", "del"},
 		{"AC", "%", "/", ""},
 		{ "7", "8", "9", "*" } ,
 		{"4", "5", "6", "+"},
 		{"1", "2", "3", "-"},
 		{"0", ".", "+/-", "="}
 	};
-	// map for button id and keys
-	std::map<int, wxString> buttonKeys;
 
 	// button positions
-	int pointY = 155;
 	int pointX = 15;
-
-	wxPanel* panel = nullptr;
+	int pointY = 105;
+	
+	wxPanel* panel;
 	wxTextCtrl* display = nullptr;
+	wxButton* equalButton = nullptr;
 
 	wxString currentInput = "";
 	bool IsLastOperator = false;
 	bool IsLastNumber = false;
 public:
 	Window();
-	~Window();
 
-	void OnButtonClicked(wxCommandEvent& evt);
-	void HandleEqual();
-
-	wxDECLARE_EVENT_TABLE();
+	void OnEqualButtonClicked(wxCommandEvent& evt);
 };
-
-enum { ID_BTN_FIRST = 10000, ID_BTN_LAST = 10100 };

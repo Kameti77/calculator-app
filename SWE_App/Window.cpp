@@ -1,10 +1,8 @@
 #include "Window.h"
 #include <wx/tokenzr.h>
 #include <cmath>
-
-wxBEGIN_EVENT_TABLE(Window, wxFrame)
-EVT_COMMAND_RANGE(ID_BTN_FIRST, ID_BTN_LAST, wxEVT_BUTTON, Window::OnButtonClicked)
-wxEND_EVENT_TABLE()
+#include "ButtonFactory.h"
+#include "CalculatorProcessor.h"
 
 Window::Window() : wxFrame(nullptr, wxID_ANY, "CALCULATOR", wxPoint(200, 200), wxSize(440, 560)) {
 	panel = new wxPanel(this, wxID_ANY, wxPoint(0, 0), wxSize(440, 560));
@@ -18,164 +16,40 @@ Window::Window() : wxFrame(nullptr, wxID_ANY, "CALCULATOR", wxPoint(200, 200), w
 	display->SetBackgroundColour(wxColour(62, 77, 77));
 	display->SetFont(wxFont(24, wxFONTFAMILY_TELETYPE, wxFONTSTYLE_NORMAL, wxFONTWEIGHT_BOLD));
 
-	// trignometry and delete buttons
-	for (int i = 0; i < 4; ++i) {
-		wxButton* newBtn = new wxButton(panel, 10000 + i, firstRowBtns[i], wxPoint(15 + i * 100, 105), wxSize(90, 35), wxBORDER_NONE);
-		buttonKeys.insert({ 10000 + i, firstRowBtns[i] });
-		if (firstRowBtns[i] == "del") {
-			newBtn->SetBackgroundColour(wxColour(99, 46, 46));
-			newBtn->SetForegroundColour(wxColour(255, 255, 255));
-			newBtn->SetFont(btnFont);
-		}
-		else {
-			newBtn->SetBackgroundColour(wxColour(136, 167, 2));
-			newBtn->SetFont(btnFont);
-		}
+	ButtonFactory::Init(panel, btnFont, display);
 
-	}
-
-	// other buttons
-
-	int countId = 0;
-	for (int row = 0; row < 5; ++row) {
-		for (int col = 0; col < 4; ++col) {
-			if (btns[row][col] == "") {
-				continue;
-			}
-			if (btns[row][col] == "AC") {
-				wxButton* newBtn = new wxButton(panel, 10010, btns[row][col], wxPoint(pointX, pointY), wxSize(190, 55), wxBORDER_NONE);
-				newBtn->SetBackgroundColour(wxColour(68, 51, 136));
-				newBtn->SetForegroundColour(wxColour(255, 255, 255));
-				newBtn->SetFont(btnFont);
-				pointX += 100;
-			}
-			else {
-				wxButton* newBtn = new wxButton(panel, 10010 + countId, btns[row][col], wxPoint(pointX, pointY), wxSize(90, 55), wxBORDER_NONE);
-				if (btns[row][col] == "=") {
-					newBtn->SetBackgroundColour(wxColour(213, 75, 0));				newBtn->SetFont(btnFont);
-				}
-				else {
-					newBtn->SetBackgroundColour(wxColour(62, 62, 77));
-				}
-				newBtn->SetForegroundColour(wxColour(255, 255, 255));
-				newBtn->SetFont(btnFont);
-
-			}
-			pointX += 100;
-			countId++;
-		}
-		pointX = 15;
-		pointY += 70;
-	}
 	SetSizer(mainSizer);
 
-	int count = 0;
-	for (int row = 0; row < 5; ++row) {
+	for (int row = 0; row < 6; ++row) {
 		for (int col = 0; col < 4; ++col) {
 			if (btns[row][col] == "") {
 				continue;
 			}
-			buttonKeys.insert({ 10010 + count, btns[row][col] });
-			count++;
-		}
-	}
-}
-
-Window::~Window() {
-
-}
-
-void Window::OnButtonClicked(wxCommandEvent& evt) {
-	int btnId = evt.GetId();
-
-	if (buttonKeys[btnId] == "=") {
-		HandleEqual();
-	}
-	else if (buttonKeys[btnId] == "AC") {
-		currentInput = "";
-	}
-	else if (buttonKeys[btnId] == "del") {
-		if (!currentInput.IsEmpty()) currentInput.RemoveLast();
-	}
-	else {
-		if (buttonKeys[btnId] == "+" || buttonKeys[btnId] == "-" || buttonKeys[btnId] == "*" || buttonKeys[btnId] == "/" || buttonKeys[btnId] == "%") {
-			if (IsLastOperator) currentInput.Remove(currentInput.Length() - 3);
-			currentInput += " " + buttonKeys[btnId] + " ";
-			IsLastOperator = true;
-		}
-		else if (buttonKeys[btnId] == "sin" || buttonKeys[btnId] == "cos" || buttonKeys[btnId] == "tan") {
-			if (IsLastOperator) currentInput.Remove(currentInput.Length() - 4);
-			currentInput += buttonKeys[btnId] + " ";
-			IsLastOperator = true;
-		}
-		else if (buttonKeys[btnId] == "+/-") {
-			currentInput += "-";
-			IsLastOperator = false;
-		}
-		else {
-			if (buttonKeys[btnId] == ".") {
-				if (IsLastOperator) currentInput.Remove(currentInput.Length() - 1);
-				IsLastOperator = true;
+			if (btns[row][col] == "=") {
+				equalButton = ButtonFactory::CreateEqualButton(wxPoint(pointX, pointY));
 			}
 			else {
-				IsLastOperator = false;
+				ButtonFactory::CreateButton(btns[row][col], wxPoint(pointX, pointY));
 			}
-			currentInput += buttonKeys[btnId];
+			if (btns[row][col] == "AC") {
+				pointX += 100;
+			}
+			pointX += 100;
 		}
+		pointX = 15;
+		if (row == 0) pointY += 50;
+		else pointY += 70;
 	}
-	display->SetValue(currentInput);
+
+	equalButton->Bind(wxEVT_BUTTON, &Window::OnEqualButtonClicked, this);
 }
 
-void Window::HandleEqual() {
-
-	wxString expression = display->GetValue();
-	wxStringTokenizer tokenizer(expression, " ", wxTOKEN_DEFAULT);
-
-	double result = 0.0;
-	wxString currentOperator = "+";
-	bool exception = false;
-	while (tokenizer.HasMoreTokens())
-	{
-		wxString token = tokenizer.GetNextToken().Trim();
-		if (token.IsEmpty())
-			continue;
-		if (token == "+" || token == "-" || token == "*" || token == "/" || token == "%") {
-			currentOperator = token;
-		}
-		else if (token == "sin" || token == "cos" || token == "tan") {
-			currentOperator = token;
-		}
-		else {
-			double number = wxAtof(token);
-			if (currentOperator == "+")      result += number;
-			else if (currentOperator == "-") result -= number;
-			else if (currentOperator == "*") result *= number;
-			else if (currentOperator == "/") {
-				if (number == 0) { exception = true; break; }
-				result /= number;
-			}
-			else if (currentOperator == "%") {
-				if (number == 0) { exception = true; break; }
-				result = fmod(result, number);
-			}
-			else if (currentOperator == "sin")
-			{
-				result = sin(number * M_PI / 180.0);
-				if (fabs(result) < 1e-10)
-					result = 0;
-			}
-			else if (currentOperator == "cos")
-			{
-				result = cos(number * M_PI / 180.0);
-				if (fabs(result) < 1e-10)
-					result = 0;
-			}
-			else if (currentOperator == "tan") {
-				result = tan(number * M_PI / 180.0);
-				if (fabs(result) < 1e-10)
-					result = 0;
-			}
-		}
-	}
-	exception ? currentInput = "undefined" : currentInput = wxString::Format(wxT("%g"), result);
+void Window::OnEqualButtonClicked(wxCommandEvent& evt) {
+	wxString input = display->GetValue();
+	double value = CalculatorProcessor::GetInstance().Calculate(input);
+	wxString output;
+	if (CalculatorProcessor::GetInstance().exception) { output = "undefined"; }
+	else if (CalculatorProcessor::GetInstance().isEmpty) { output = ""; }
+	else output = wxString::Format(wxT("%.12g"), value);
+	display->SetValue(output);
 }
